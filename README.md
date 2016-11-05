@@ -6,7 +6,7 @@ GoReddit is a wrapper for the Reddit API written in Go.
 
 # Usage
 
-```
+```go
 package main
 
 import(
