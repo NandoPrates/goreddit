@@ -1,8 +1,43 @@
 package goreddit
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
 )
+
+type Link struct {
+	Fullname    string  `json:"name"`
+	Domain      string  `json:"domain"`
+	Subreddit   string  `json:"subreddit"`
+	Title       string  `json:"title"`
+	Text        string  `json:"selftext_html"`
+	Author      string  `json:"author"`
+	Id          string  `json:"id"`
+	NumComments int     `json:"num_comments"`
+	Gilded      int     `json:"gilded"`
+	Clicked     bool    `json:"clicked"`
+	Score       int     `json:"score"`
+	Upvotes     int     `json:"ups"`
+	Downvotes   int     `json:"downs"`
+	HiddenScore bool    `json:"hide_score"`
+	Thumbnail   string  `json:"thumbnail"`
+	Archived    bool    `json:"archived"`
+	IsSelf      bool    `json:"is_self"`
+	Spoiler     bool    `json:"spoiler"`
+	Locked      bool    `json:"locked"`
+	Stickied    bool    `json:"stickied"`
+	Created     float64 `json:"created"`
+	LinkFlair   string  `json:"link_flair_text"`
+	Permalink   string  `json:"permalink"`
+	Url         string  `json:"url"`
+}
+
+type LinkList struct {
+	Links  []*Link
+	Before string
+	After  string
+}
 
 // SubmitText submits a text (markdown format) to a subreddit
 func (r *Reddit) SubmitText(sub string, title string, text string) error {
@@ -38,5 +73,53 @@ func (r *Reddit) Submit(sub string, title string, content string, kind string) (
 	}
 
 	_, err = r.JsonResponse(request)
+	return
+}
+
+// ListLinks gets <limit> number of links from a <sub> according to the <sort> specified.
+// Sort can be either "new", "hot", "top" or "controversial". It also takes a <after> string
+// with the fullname of the anchor for pagination. If none is specified, it will start from
+// the very first link from the first page.
+func (r *Reddit) ListLinks(sub string, sort string, limit int, after string) (list *LinkList, err error) {
+	form := url.Values{
+		"limit": {fmt.Sprintf("%d", limit)},
+		"after": {after},
+	}
+
+	request, err := r.Request("GET", fmt.Sprintf("/r/%s/%s", sub, sort), form)
+	if err != nil {
+		return
+	}
+
+	data, err := r.JsonResponse(request)
+	if err != nil {
+		return
+	}
+
+	var obj struct {
+		Data struct {
+			Links []struct {
+				Link *Link `json:"data"`
+			} `json:"children"`
+			Before string
+			After  string
+		}
+	}
+	err = json.Unmarshal(data, &obj)
+	if err != nil {
+		return
+	}
+
+	var tempList []*Link
+	for _, v := range obj.Data.Links {
+		tempList = append(tempList, v.Link)
+	}
+
+	list = &LinkList{
+		tempList,
+		obj.Data.Before,
+		obj.Data.After,
+	}
+
 	return
 }
