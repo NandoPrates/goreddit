@@ -2,7 +2,14 @@ package goreddit
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+)
+
+const (
+	Upvote   = 1
+	Downvote = -1
+	Unvote   = 0
 )
 
 type Comment struct {
@@ -76,5 +83,24 @@ func (r *Reddit) ListComments(sub string, idlink string, options ListingOpt) (co
 		}
 	}
 
+	return
+}
+
+// Vote takes a fullname (it can be a link or a comment) and cast a vote on it.
+// Votes can be goreddit.Upvote, goreddit.Downvote and goreddit.Unvote.
+// NOTE from Reddit: votes must be cast by humans. That is, API clients proxying a
+// human's action one-for-one are OK, but bots deciding how to vote on content or
+// amplifying a human's vote are not. See the reddit rules for more details on what
+// constitutes vote cheating.
+func (r *Reddit) Vote(fullname string, vote int) (err error) {
+	form := url.Values{
+		"id":  {fullname},
+		"dir": {fmt.Sprintf("%d", vote)},
+	}
+	request, err := r.Request("POST", "/api/vote", form)
+	if err != nil {
+		return
+	}
+	_, err = r.JsonResponse(request)
 	return
 }
