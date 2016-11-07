@@ -2,25 +2,33 @@ package goreddit
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 )
 
 type Comment struct {
-	Author      string  `json:"author"`
-	Text        string  `json:"body"`
-	Title       string  `json:"title"`
-	HtmlText    string  `json:"body_html"`
-	Fullname    string  `json:"name"`
-	Downvotes   int     `json:"downs"`
-	Upvotes     int     `json:"ups"`
-	Score       int     `json:"score"`
-	ScoreHidden bool    `json:"score_hidden"`
-	Gilded      int     `json:"gilded"`
-	Parent      string  `json:"parent_id"`
-	Edited      bool    `json:"edited"`
-	Archived    bool    `json:"archived"`
-	Created     float64 `json:"created"`
+	Author      string      `json:"author"`
+	Text        string      `json:"body"`
+	Title       string      `json:"title"`
+	HtmlText    string      `json:"body_html"`
+	Fullname    string      `json:"name"`
+	Downvotes   int         `json:"downs"`
+	Upvotes     int         `json:"ups"`
+	Score       int         `json:"score"`
+	ScoreHidden bool        `json:"score_hidden"`
+	Gilded      int         `json:"gilded"`
+	Parent      string      `json:"parent_id"`
+	Edited      interface{} `json:"edited"` // Unknown type (bug?) It can be a float or a bool
+	Archived    bool        `json:"archived"`
+	Created     float64     `json:"created"`
+	Replies     Reply       `json:"replies"`
+}
+
+type Reply struct {
+	Data struct {
+		Comments []struct {
+			Comment Comment `json:"data"`
+		} `json:"children"`
+	}
 }
 
 // Comment send the text message as a reply to the parent message. The parent string
@@ -40,13 +48,15 @@ func (r *Reddit) Comment(parent string, text string) (err error) {
 	return
 }
 
-func (r *Reddit) ListComments(sub string, order string, limit int) (comments []Comment, err error) {
-	form := url.Values{
-		"sort":  {order},
-		"limit": {fmt.Sprintf("%d", limit)},
-	}
+// ListCommentsSub lists the comments from all the links on a sub
+func (r *Reddit) ListCommentsSub(sub string, options ListingOpt) (comments Reply, err error) {
+	return r.ListComments(sub, "", options)
+}
 
-	request, err := r.Request("GET", "/r/"+sub+"/comments", form)
+// ListComments lists the comments from a particular link of the sub
+func (r *Reddit) ListComments(sub string, idlink string, options ListingOpt) (comments Reply, err error) {
+	form := options.Values()
+	request, err := r.Request("GET", "/r/"+sub+"/comments/"+idlink, form)
 	if err != nil {
 		return
 	}
@@ -56,17 +66,14 @@ func (r *Reddit) ListComments(sub string, order string, limit int) (comments []C
 		return
 	}
 
-	var obj struct {
-		Data struct {
-			Children []struct {
-				Data Comment
-			}
+	err = json.Unmarshal(data, &comments)
+	if err != nil {
+		if _, ok := err.(*json.UnmarshalTypeError); ok {
+			// Silently ignore a UnmarshalTypeError :)
+			err = nil
+		} else {
+			return
 		}
-	}
-	_ = json.Unmarshal(data, &obj)
-
-	for k := range obj.Data.Children {
-		comments = append(comments, obj.Data.Children[k].Data)
 	}
 
 	return

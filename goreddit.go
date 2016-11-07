@@ -22,6 +22,18 @@ type Reddit struct {
 	Client      *http.Client
 }
 
+// ListingOpt defines options when querying for a list resource (list of links, list of comments, etc)
+type ListingOpt struct {
+	Limit   int
+	Count   int
+	Before  string
+	After   string
+	Show    string
+	Depth   int
+	Sort    string
+	Comment string
+}
+
 // New creates a new client and tries to log in to Reddit.
 func New(username string, password string, id string, secret string, ua string) (client *Reddit, err error) {
 	client = &Reddit{
@@ -116,11 +128,23 @@ func (r *Reddit) JsonResponse(request *http.Request) (result []byte, err error) 
 		return
 	}
 
+	var dataTemp interface{}
 	var data map[string]interface{}
 
-	err = json.Unmarshal(result, &data)
+	err = json.Unmarshal(result, &dataTemp)
 	if err != nil {
 		return
+	}
+
+	switch v := dataTemp.(type) {
+	case []interface{}:
+		data = v[1].(map[string]interface{})
+		result, err = json.Marshal(data)
+		if err != nil {
+			return
+		}
+	default:
+		data = dataTemp.(map[string]interface{})
 	}
 
 	// Catch the HTTP errors (404, 403, etc)
@@ -140,4 +164,36 @@ func (r *Reddit) JsonResponse(request *http.Request) (result []byte, err error) 
 	}
 
 	return
+}
+
+// Values returns a url.Values with the current ListingOpt's values
+func (l ListingOpt) Values() url.Values {
+	val := url.Values{}
+
+	if l.Limit != 0 {
+		val.Add("limit", fmt.Sprintf("%d", l.Limit))
+	}
+	if l.Count != 0 {
+		val.Add("count", fmt.Sprintf("%d", l.Count))
+	}
+	if l.Before != "" {
+		val.Add("before", l.Before)
+	}
+	if l.After != "" {
+		val.Add("after", l.After)
+	}
+	if l.Show != "" {
+		val.Add("show", l.Show)
+	}
+	if l.Depth != 0 {
+		val.Add("depth", fmt.Sprintf("%d", l.Depth))
+	}
+	if l.Sort != "" {
+		val.Add("sort", l.Sort)
+	}
+	if l.Comment != "" {
+		val.Add("comment", l.Comment)
+	}
+
+	return val
 }

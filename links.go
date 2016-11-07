@@ -77,15 +77,9 @@ func (r *Reddit) Submit(sub string, title string, content string, kind string) (
 }
 
 // ListLinks gets <limit> number of links from a <sub> according to the <sort> specified.
-// Sort can be either "new", "hot", "top" or "controversial". It also takes a <after> string
-// with the fullname of the anchor for pagination. If none is specified, it will start from
-// the very first link from the first page.
-func (r *Reddit) ListLinks(sub string, sort string, limit int, after string) (list *LinkList, err error) {
-	form := url.Values{
-		"limit": {fmt.Sprintf("%d", limit)},
-		"after": {after},
-	}
-
+// Sort can be either "new", "hot", "top" or "controversial".
+func (r *Reddit) ListLinks(sub string, sort string, options ListingOpt) (list *LinkList, err error) {
+	form := options.Values()
 	request, err := r.Request("GET", fmt.Sprintf("/r/%s/%s", sub, sort), form)
 	if err != nil {
 		return
