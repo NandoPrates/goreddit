@@ -197,3 +197,14 @@ func (l ListingOpt) Values() url.Values {
 
 	return val
 }
+
+// ActionOnThing performs an API call for multiple actions on Things (comments and links).
+// It is used by Hide, Unhide, Lock, Unlock, Save, Unsave, etc.
+func (r *Reddit) ActionOnThing(fullname string, link string) (err error) {
+	request, err := r.Request("POST", link, url.Values{"id": {fullname}})
+	if err != nil {
+		return
+	}
+	_, err = r.JsonResponse(request)
+	return
+}

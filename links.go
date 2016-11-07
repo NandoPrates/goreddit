@@ -117,3 +117,13 @@ func (r *Reddit) ListLinks(sub string, sort string, options ListingOpt) (list *L
 
 	return
 }
+
+// Hide receives a list of link fullnames, hiding each one of them
+func (r *Reddit) Hide(fullname string) (err error) {
+	return r.ActionOnThing(fullname, "/api/hide")
+}
+
+// Unhide receives a list of link fullnames, unhiding each one of them
+func (r *Reddit) Unhide(fullname string) (err error) {
+	return r.ActionOnThing(fullname, "/api/unhide")
+}
