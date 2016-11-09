@@ -30,17 +30,20 @@ func main() {
   }
 
   // Get the 10 latest comments from /r/programming
-  comments,err := client.ListComments("programming", "new", 10)
+  comments,err := client.ListCommentsSub(
+    "programming", 
+    goreddit.ListingOpt{Limit: 10, Sort: "new"}
+  )
 
   if err != nil {
     // Handle the error
   }
 
-  for _,v := range comments {
+  for _,v := range comments.Data.Comments {
     // Send a friendly reply to each one of the comments we got
     err = client.Comment(
-      v.Fullname, 
-      fmt.Sprintf("Btw, everybody knows that **spaces** are better than **tabs**, %s.", v.Author),
+      v.Comment.Fullname, 
+      fmt.Sprintf("Btw, everybody knows that **spaces** are better than **tabs**, %s.", v.Comment.Author),
     )
 
     if err != nil {
