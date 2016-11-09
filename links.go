@@ -119,11 +119,41 @@ func (r *Reddit) ListLinks(sub string, sort string, options ListingOpt) (list *L
 }
 
 // Hide receives a list of link fullnames, hiding each one of them
-func (r *Reddit) Hide(fullname string) (err error) {
+func (r *Reddit) Hide(fullname string) error {
 	return r.ActionOnThing(fullname, "/api/hide")
 }
 
 // Unhide receives a list of link fullnames, unhiding each one of them
-func (r *Reddit) Unhide(fullname string) (err error) {
+func (r *Reddit) Unhide(fullname string) error {
 	return r.ActionOnThing(fullname, "/api/unhide")
+}
+
+// Lock receives the fullname of a link and lock it
+func (r *Reddit) Lock(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/lock")
+}
+
+// Lock receives the fullname of a link and unlock it
+func (r *Reddit) Unlock(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/unlock")
+}
+
+// Spoiler receives the fullname of a link and mark it as a spoiler
+func (r *Reddit) Spoiler(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/spoiler")
+}
+
+// Unspoiler receives the fullname of a link and remove the spoiler
+func (r *Reddit) Unspoiler(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/unspoiler")
+}
+
+// MarkNsfw receives the fullname of a link and mark it as "not safe for work"
+func (r *Reddit) MarkNsfw(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/marknsfw")
+}
+
+// UnmarkNsfw receives the fullname of a link and unmark
+func (r *Reddit) UnmarkNsfw(fullname string) error {
+	return r.ActionOnThing(fullname, "/api/unmarknsfw")
 }
